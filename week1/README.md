@@ -1,4 +1,4 @@
-# **Week 1 - Programming Assignment [optional]**
+# **Week 1 - Programming Assignment**
 
 ## **Many Time Pad**
 
