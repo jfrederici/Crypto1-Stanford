@@ -5,7 +5,7 @@
     Date created: 2022/1/1
     Python Version: 3.10
     
-    Requires pycryptodone.  See https://www.pycryptodome.org/en/latest/ for documentation.
+    Requires pycryptodome.  See https://www.pycryptodome.org/en/latest/ for documentation.
 ****************************************************************************************************************************************************************
     Cryptography 1
     Stanford Online via Coursera - https://www.coursera.org/learn/crypto/
@@ -23,6 +23,7 @@
 
     For an implementation of AES you may use an existing crypto library such as PyCrypto  (Python), Crypto++  (C++), or any other. While it is fine to use the
     built-in AES functions, we ask that as a learning experience you implement CBC and CTR modes yourself.`
+
 ****************************************************************************************************************************************************************
 '''
 
@@ -50,7 +51,7 @@ for i in range(len(ciphertext_cbc)):
     
     cipher = AES.new(cbc_key, AES.MODE_CBC, InitVector)
     plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
-    print("CBC Plaintext " + str(i) + ": " + str(plaintext))
+    print("CBC Plaintext " + str(i) + ": " + bytes.decode(plaintext))
 
 # Perform decryption on CTR ciphertext
 # for each ciphertext_cbc...
@@ -59,12 +60,12 @@ for i in range(len(ciphertext_ctr)):
     ciphertext_ctr[i] = bytes.fromhex(ciphertext_ctr[i])
     
     # ... get the first 16 bytes as the initialization vector and the rest as the ciphertext
+    # Remember that in CTR mode, the first 1/2 of the IV is the nonce and the second 1/2 is the initial counter value.
     InitVector = ciphertext_ctr[i][0:16]
-    nonce = InitVector[0:8]
-    counter = InitVector[8:]
-    
+    nonce_value = InitVector[0:8]
+    counter_value = InitVector[8:]
     ciphertext = ciphertext_ctr[i][16:]
     
-    cipher = AES.new(ctr_key, AES.MODE_CTR, nonce = InitVector[0:8], initial_value = InitVector[8:])
+    cipher = AES.new(ctr_key, AES.MODE_CTR, nonce = nonce_value, initial_value = counter_value)
     plaintext = cipher.decrypt(ciphertext)
-    print("CTR Plaintext " + str(i) + ": " + str(plaintext))
+    print("CTR Plaintext " + str(i) + ": " + bytes.decode(plaintext))
