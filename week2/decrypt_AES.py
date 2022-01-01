@@ -6,6 +6,7 @@
     Python Version: 3.10
     
     Requires pycryptodome.  See https://www.pycryptodome.org/en/latest/ for documentation.
+
 ****************************************************************************************************************************************************************
     Cryptography 1
     Stanford Online via Coursera - https://www.coursera.org/learn/crypto/
@@ -23,6 +24,9 @@
 
     For an implementation of AES you may use an existing crypto library such as PyCrypto  (Python), Crypto++  (C++), or any other. While it is fine to use the
     built-in AES functions, we ask that as a learning experience you implement CBC and CTR modes yourself.`
+
+****************************************************************************************************************************************************************
+    Goal: Decrypt given ciphertext to recover the plaintext messages using the key provided.
 
 ****************************************************************************************************************************************************************
 '''
