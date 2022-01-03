@@ -1,12 +1,16 @@
 '''
 ****************************************************************************************************************************************************************
-    File name: decrypt_AES.py
+    File name: decrypt_AES_easyMode.py
     Author: Joshua Frederici
-    Date created: 2022/1/2
+    Date created: 2022/1/1
+    Last modified: 2022/1/2
     Python Version: 3.10
     
     Requires pycryptodome.  See https://www.pycryptodome.org/en/latest/ for documentation.
 
+    Note: The point of the exercise wasn't to just use pycryptodome to decrypt text such as below.  It was to use the basic AES encryption/decryption
+    functionality (ECB mode) in the module but to implement the cipher block chaining (CBC) and counter mode functionality yourself.  This script is 
+    simply and example using pycrptodome for AES decryption.
 ****************************************************************************************************************************************************************
     Cryptography 1
     Stanford Online via Coursera - https://www.coursera.org/learn/crypto/
@@ -32,11 +36,7 @@
 '''
 
 from Crypto.Cipher import AES
-
-# function to XOR two byte arrays and return output bytes, output length will match the length of the shorter of the input byte arrays
-# https://nitratine.net/blog/post/xor-python-byte-strings/
-def xor_bytes(ba1, ba2):
-    return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+from Crypto.Util.Padding import unpad
 
 cbc_key = bytes.fromhex("140b41b22a29beb4061bda66b6747e14")
 ciphertext_cbc = ["4ca00ff4c898d61e1edbf1800618fb2828a226d160dad07883d04e008a7897ee2e4b7465d5290d0c0e6c6822236e1daafb94ffe0c5da05d9476be028ad7c1d81",
@@ -46,6 +46,7 @@ ctr_key = bytes.fromhex("36f18357be4dbd77f050515c73fcf9f2")
 ciphertext_ctr = ["69dda8455c7dd4254bf353b773304eec0ec7702330098ce7f7520d1cbbb20fc388d1b0adb5054dbd7370849dbf0b88d393f252e764f1f5f7ad97ef79d59ce29f5f51eeca32eabedd9afa9329",
     "770b80259ec33beb2561358a9f2dc617e46218c0a53cbeca695ae45faa8952aa0e311bde9d4e01726d3184c34451"]
 
+
 # Perform decryption on CBC ciphertext
 # for each ciphertext_cbc...
 for i in range(len(ciphertext_cbc)):
@@ -53,54 +54,26 @@ for i in range(len(ciphertext_cbc)):
     ciphertext_cbc[i] = bytes.fromhex(ciphertext_cbc[i])
     
     # ... get the first 16 bytes as the initialization vector and the rest as the ciphertext
-    InitVector = bytearray(ciphertext_cbc[i][0:16])
-    ciphertext = bytes(ciphertext_cbc[i][16:])
-    plaintext = ""
-
-    # calculate the number of blocks
-    # this will be a whole number since CBC will pad to a full AES block
-    numBlocks = (len(ciphertext) / AES.block_size)
-    for j in range(int(numBlocks)):
-        ctBlock = ciphertext[j * AES.block_size : (j + 1) * AES.block_size]
-        cipher = AES.new(cbc_key, AES.MODE_ECB)
-        block = cipher.decrypt(ctBlock)
-        ptBlock = xor_bytes(block, bytes(InitVector))
-        # if this is the last block...
-        if j == int(numBlocks-1):
-            # ... get final byte to see how much padding to remove and then remove it.
-            paddinglength = ptBlock[-1]
-            ptBlock = ptBlock[0:-paddinglength]
-        InitVector = ctBlock
-        plaintext = plaintext + bytes.decode(ptBlock)
-    print("CBC Message " + str(i) + ": " + plaintext)
+    InitVector = ciphertext_cbc[i][0:16]
+    ciphertext = ciphertext_cbc[i][16:]
+    
+    cipher = AES.new(cbc_key, AES.MODE_CBC, InitVector)
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    print("CBC Plaintext " + str(i) + ": " + bytes.decode(plaintext))
 
 # Perform decryption on CTR ciphertext
-# for each ciphertext_ctr...
+# for each ciphertext_cbc...
 for i in range(len(ciphertext_ctr)):
-    # ... convert to bytes...
+    # ... convert to bytes... 
     ciphertext_ctr[i] = bytes.fromhex(ciphertext_ctr[i])
     
-    # ... get the first 16 bytes as the initialization vector and the rest as the ciphertext...
-    # ... and store it as an integer for easy incrementing.  We can always convert back to bytes when needed.
-    InitVector = int.from_bytes(ciphertext_ctr[i][0:16],'big')
+    # ... get the first 16 bytes as the initialization vector and the rest as the ciphertext
+    # Remember that in CTR mode, the first 1/2 of the IV is the nonce and the second 1/2 is the initial counter value.
+    InitVector = ciphertext_ctr[i][0:16]
+    nonce_value = InitVector[0:8]
+    counter_value = InitVector[8:]
     ciphertext = ciphertext_ctr[i][16:]
-    plaintext = ""
-
-    # calculate the number of blocks
-    # this value may have a decimal component if the message does not fill up the final block.
-    numBlocks = int((len(ciphertext) / AES.block_size))
-    # check if there's a partial block, and if so add it to the number of blocks we'll process.
-    if len(ciphertext) % AES.block_size != 0:
-        numBlocks += 1
     
-    for j in range(int(numBlocks)):
-        ctBlock = ciphertext[j * AES.block_size : (j + 1) * AES.block_size]
-        cipher = AES.new(ctr_key, AES.MODE_ECB)
-        # remember that in CTR mode you _ENCRYPT_ the IV with the key...
-        block = cipher.encrypt(InitVector.to_bytes(AES.block_size, 'big'))
-        # ... and then XOR the resulting value with the ciphertext to recover the plaintext.
-        ptBlock = xor_bytes(block, ctBlock)
-        # Increment the counter for the next block.
-        InitVector = InitVector + 1
-        plaintext = plaintext + bytes.decode(ptBlock)
-    print("CTR Message " + str(i) + ": " + plaintext)
+    cipher = AES.new(ctr_key, AES.MODE_CTR, nonce = nonce_value, initial_value = counter_value)
+    plaintext = cipher.decrypt(ciphertext)
+    print("CTR Plaintext " + str(i) + ": " + bytes.decode(plaintext))
