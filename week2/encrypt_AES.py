@@ -40,11 +40,11 @@ def xor_bytes(ba1, ba2):
 
 cbc_key = bytes.fromhex("140b41b22a29beb4061bda66b6747e14")
 cbc_iv = ("4ca00ff4c898d61e1edbf1800618fb28", "5b68629feb8606f9a6667670b75b38a5")
-plaintext_cbc = ["Basic CBC mode encryption needs padding.", "Our implementation uses rand. IV"]
+plaintext_cbc = ["We're all at the same skill level, Jerry.", "No soup for you! Next!"]
 
 ctr_key = bytes.fromhex("36f18357be4dbd77f050515c73fcf9f2")
 ctr_iv = ("69dda8455c7dd4254bf353b773304eec", "770b80259ec33beb2561358a9f2dc617")
-plaintext_ctr = ["CTR mode lets you build a stream cipher from a block cipher.", "Always avoid the two time pad!"]
+plaintext_ctr = ["Look, I work for the phone company. I've had a lot of experience with semantics, so don't try to lure me into some maze of circular logic.", "It's a Festivus miracle!"]
 
 # Perform encryption on CBC plaintext
 # for each plaintext_cbc...
@@ -58,11 +58,10 @@ for i in range(len(plaintext_cbc)):
     # we will always need one more block.  Either we will be rounding up to account for a partial block that we'll pad, or
     # if the message is even divisible by the block size then we will need to create a full block of padding.
     numBlocks = int(len(plaintext_bytes) / AES.block_size) + 1
-
-    # padding
-    paddinglength = len(plaintext_bytes) % AES.block_size
-    # if the message was evenly divisible by the block size, we'll need to create a full block of padding.
+    # calculate proper PKCS5 padding and add
+    paddinglength = AES.block_size - (len(plaintext_bytes) % AES.block_size)
     if paddinglength == 0:
+        # if the message was evenly divisible by the block size, we'll need to create a full block of padding.
         paddinglength = AES.block_size
     plaintext_bytes.extend([paddinglength] * paddinglength)
 
