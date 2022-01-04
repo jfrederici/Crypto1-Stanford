@@ -50,59 +50,59 @@ plaintext_ctr = ["Look, I work for the phone company. I've had a lot of experien
 # for each plaintext_cbc...
 for i in range(len(plaintext_cbc)):
     plaintext_bytes = bytearray(plaintext_cbc[i], "utf-8")
-    InitVector = bytes.fromhex(cbc_iv[i])
-    # the initvector will lead ht encrypted message in the ciphertext
-    ciphertext = bytearray(InitVector)
+    iv = bytes.fromhex(cbc_iv[i])
+    # the iv will lead ht encrypted message in the ciphertext
+    ciphertext_bytes = bytearray(iv)
 
     # calculate the number of whole blocks
     # we will always need one more block.  Either we will be rounding up to account for a partial block that we'll pad, or
     # if the message is even divisible by the block size then we will need to create a full block of padding.
-    numBlocks = int(len(plaintext_bytes) / AES.block_size) + 1
+    num_blocks = int(len(plaintext_bytes) / AES.block_size) + 1
     # calculate proper PKCS5 padding and add
-    paddinglength = AES.block_size - (len(plaintext_bytes) % AES.block_size)
-    if paddinglength == 0:
+    padding_length = AES.block_size - (len(plaintext_bytes) % AES.block_size)
+    if padding_length == 0:
         # if the message was evenly divisible by the block size, we'll need to create a full block of padding.
-        paddinglength = AES.block_size
-    plaintext_bytes.extend([paddinglength] * paddinglength)
+        padding_length = AES.block_size
+    plaintext_bytes.extend([padding_length] * padding_length)
 
     # XOR the block with the IV
     # Encrypt the block with the key
     # Set the IV for the next block to the ciphertext block
     # Add the ciphertext block to the ciphertext
-    for j in range(int(numBlocks)):
+    for j in range(int(num_blocks)):
         ptBlock = bytes(plaintext_bytes[j * AES.block_size : (j + 1) * AES.block_size])
-        block = bytearray(xor_bytes(ptBlock, bytes(InitVector)))
+        block = bytearray(xor_bytes(ptBlock, bytes(iv)))
         cipher = AES.new(cbc_key, AES.MODE_ECB)
-        ctBlock = cipher.encrypt(block)
-        InitVector = bytearray(ctBlock)
-        ciphertext.extend(ctBlock)
-    print("CBC Encrypted " + str(i) + ": " + bytearray.hex(ciphertext))
+        block = cipher.encrypt(block)
+        iv = bytearray(block)
+        ciphertext_bytes.extend(block)
+    print("CBC Encrypted " + str(i) + ": " + bytearray.hex(ciphertext_bytes))
 
 # Perform encryption on CTR plaintext
 # for each plaintext_ctr...
 for i in range(len(plaintext_ctr)):
     plaintext_bytes = bytearray(plaintext_ctr[i], "utf-8")
-    InitVector = bytes.fromhex(ctr_iv[i])
-    # the initvector will lead the encrypted message in the ciphertext
-    ciphertext = bytearray(InitVector)
-    # convert the initvector to an int so we can easily increment it for each block
-    InitVector = int.from_bytes(InitVector, 'big')
+    iv = bytes.fromhex(ctr_iv[i])
+    # the iv will lead the encrypted message in the ciphertext
+    ciphertext_bytes = bytearray(iv)
+    # convert the iv to an int so we can easily increment it for each block
+    iv = int.from_bytes(iv, 'big')
 
     # calculate the number of whole blocks
-    numBlocks = int(len(plaintext_bytes) / AES.block_size)
+    num_blocks = int(len(plaintext_bytes) / AES.block_size)
     # check if there's a partial block, and if so add it to the number of blocks we'll process.
     if (len(plaintext_bytes) % AES.block_size) != 0:
-        numBlocks += 1
+        num_blocks += 1
 
     # Encrypt the IV with the key
     # XOR the block with the plaintext to get the ciphertext
     # Add the ciphertext block to the ciphertext
     # Increment the IV for the next block
-    for j in range(int(numBlocks)):
+    for j in range(int(num_blocks)):
         ptBlock = bytes(plaintext_bytes[j * AES.block_size : (j + 1) * AES.block_size])
         cipher = AES.new(ctr_key, AES.MODE_ECB)
-        block = cipher.encrypt(InitVector.to_bytes(AES.block_size, 'big'))
-        ctBlock = xor_bytes(block, ptBlock)
-        InitVector += 1
-        ciphertext.extend(ctBlock)
-    print("CTR Encrypted " + str(i) + ": " + bytearray.hex(ciphertext))
+        block = cipher.encrypt(iv.to_bytes(AES.block_size, 'big'))
+        block = xor_bytes(block, ptBlock)
+        iv += 1
+        ciphertext_bytes.extend(block)
+    print("CTR Encrypted " + str(i) + ": " + bytearray.hex(ciphertext_bytes))
